@@ -1,10 +1,42 @@
-// ========================
-// ELEMENTOS PRINCIPAIS
-// ========================
 const switchesDiv = document.getElementById("switches");
 const patchesDiv = document.getElementById("patches");
 const svg = document.getElementById("svgLines");
 const info = document.getElementById("info");
+
+const mapping = {}; // objeto de mapeamentos
+let ativo = null;
+const linhasAtivas = {};
+
+// ========================
+// CARREGAR MAPEAMENTOS DO BACKEND
+// ========================
+async function loadMapping() {
+  try {
+    const res = await fetch("/mapping");
+    const data = await res.json();
+    Object.assign(mapping, data);
+  } catch (err) {
+    console.error("Erro ao carregar mapping:", err);
+  }
+}
+
+// ========================
+// FUNÇÃO PARA SALVAR MAPEAMENTO NO BACKEND
+// ========================
+async function saveMapping(key, value) {
+  const payload = {};
+  payload[key] = value;
+  try {
+    await fetch("/mapping", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    mapping[key] = value; // atualiza local também
+  } catch (err) {
+    console.error("Erro ao salvar mapping:", err);
+  }
+}
 
 // ========================
 // CRIAR SWITCHES (4x 26 portas)
@@ -61,16 +93,6 @@ for (let p = 1; p <= 3; p++) {
 }
 
 // ========================
-// MAPEAMENTO INICIAL
-// ========================
-const mapping = {
-  "switch1-Porta3": { target: "PatchPanel1-Porta37", vlan: 20 },
-  "switch3-Porta5": { target: "PatchPanel3-Porta44", vlan: 20 },
-  "switch3-Porta20": { target: "PatchPanel3-Porta43", vlan: 20 },
-  "switch3-Porta19": { target: "PatchPanel2-Porta36", vlan: 20 }
-};
-
-// ========================
 // FUNÇÃO PARA DESENHAR LINHA
 // ========================
 function desenharLinha(a, b) {
@@ -96,21 +118,45 @@ function desenharLinha(a, b) {
 }
 
 // ========================
-// CLICK NAS PORTAS (LINHAS)
+// MAPPEAMENTO REVERSO (PATCH PANEL → SWITCH)
 // ========================
-let ativo = null;
-const linhasAtivas = {}; // guarda linhas ativas por porta
+function getReverseMapping(portId) {
+  for (const swPort in mapping) {
+    if (mapping[swPort].target === portId) {
+      return { origem: swPort, vlan: mapping[swPort].vlan };
+    }
+  }
+  return null;
+}
 
+// ========================
+// CLICK NAS PORTAS (SWITCH OU PATCH PANEL)
+// ========================
 document.addEventListener("click", function(e){
   if (!e.target.classList.contains("port")) return;
 
   const id = e.target.id;
+  let origemId, destinoId, vlan;
 
-  // se clicar na mesma porta ativa, remove linha
-  if (ativo === id) {
-    if (linhasAtivas[id]) {
-      linhasAtivas[id].remove();
-      delete linhasAtivas[id];
+  if (mapping[id]) {
+    origemId = id;
+    destinoId = mapping[id].target;
+    vlan = mapping[id].vlan;
+  } else {
+    const rev = getReverseMapping(id);
+    if (!rev) {
+      info.innerText = "Sem mapeamento";
+      return;
+    }
+    origemId = rev.origem;
+    destinoId = id;
+    vlan = rev.vlan;
+  }
+
+  if (ativo === origemId) {
+    if (linhasAtivas[origemId]) {
+      linhasAtivas[origemId].remove();
+      delete linhasAtivas[origemId];
     }
     ativo = null;
     info.innerText = "Clique em uma porta";
@@ -118,30 +164,23 @@ document.addEventListener("click", function(e){
     return;
   }
 
-  // limpa todas as linhas existentes antes
   Object.keys(linhasAtivas).forEach(k => {
     linhasAtivas[k].remove();
     delete linhasAtivas[k];
   });
-
   document.querySelectorAll(".port").forEach(x => x.classList.remove("active"));
 
-  const map = mapping[id];
-  if (!map) {
-    info.innerText = "Sem mapeamento";
-    return;
-  }
+  const origemEl = document.getElementById(origemId);
+  const destinoEl = document.getElementById(destinoId);
+  const l = desenharLinha(origemEl, destinoEl);
+  linhasAtivas[origemId] = l;
 
-  const destino = document.getElementById(map.target);
-  const l = desenharLinha(e.target, destino);
-  linhasAtivas[id] = l;
+  ativo = origemId;
+  origemEl.classList.add("active");
+  destinoEl.classList.add("active");
 
-  ativo = id;
-  e.target.classList.add("active");
-  destino.classList.add("active");
-
-  info.innerText = `${id} → ${map.target} | VLAN ${map.vlan}`;
-  destino.scrollIntoView({ behavior: "smooth", block: "center" });
+  info.innerText = `${origemId} → ${destinoId} | VLAN ${vlan}`;
+  destinoEl.scrollIntoView({ behavior: "smooth", block: "center" });
 });
 
 // ========================
@@ -149,7 +188,7 @@ document.addEventListener("click", function(e){
 // ========================
 const mappingForm = document.getElementById("mappingForm");
 
-mappingForm.addEventListener("submit", function(e){
+mappingForm.addEventListener("submit", async function(e){
   e.preventDefault();
 
   const formData = new FormData(mappingForm);
@@ -162,9 +201,11 @@ mappingForm.addEventListener("submit", function(e){
   const key = `${sw}-Porta${swPort}`;
   const value = { target: `${pp}-Porta${ppPort}`, vlan: parseInt(vlan) };
 
-  // Adiciona ao mapping
-  mapping[key] = value;
-
-  // resetar formulário
+  await saveMapping(key, value);
   mappingForm.reset();
 });
+
+// ========================
+// INICIALIZAÇÃO
+// ========================
+loadMapping();

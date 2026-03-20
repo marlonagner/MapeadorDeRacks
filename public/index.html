@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mapa de Switches e Patch Panels</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <h1>Mapa de Switches e Patch Panels</h1>
+
+  <!-- CONTÊINER DOS SWITCHES -->
+  <div id="switches-container">
+    <h2>Switches</h2>
+    <div id="switches"></div>
+  </div>
+
+  <!-- CONTÊINER DOS PATCH PANELS -->
+  <div id="patches-container">
+    <h2>Patch Panels</h2>
+    <div id="patches"></div>
+  </div>
+
+  <!-- INFORMAÇÕES -->
+  <p id="info">Clique em uma porta</p>
+
+  <!-- FORMULÁRIO PARA ADICIONAR MAPEAMENTO -->
+  <div id="form-container">
+    <h2>Adicionar/Atualizar Mapeamento</h2>
+    <form id="mappingForm">
+      <label for="switch">Switch:</label>
+      <select name="switch" id="switch" required>
+        <option value="switch1">Switch 1</option>
+        <option value="switch2">Switch 2</option>
+        <option value="switch3">Switch 3</option>
+        <option value="switch4">Switch 4</option>
+      </select>
+
+      <label for="switchPort">Porta do Switch:</label>
+      <input type="number" name="switchPort" id="switchPort" min="1" max="26" required>
+
+      <label for="patchPanel">Patch Panel:</label>
+      <select name="patchPanel" id="patchPanel" required>
+        <option value="PatchPanel1">Patch Panel 1</option>
+        <option value="PatchPanel2">Patch Panel 2</option>
+        <option value="PatchPanel3">Patch Panel 3</option>
+      </select>
+
+      <label for="patchPort">Porta do Patch Panel:</label>
+      <input type="number" name="patchPort" id="patchPort" min="1" max="48" required>
+
+      <label for="vlan">VLAN:</label>
+      <input type="number" name="vlan" id="vlan" min="1" max="4094" required>
+
+      <button type="submit">Adicionar/Atualizar</button>
+    </form>
+  </div>
+
+  <!-- SVG para desenhar linhas -->
+  <svg id="svgLines"></svg>
+
+  <script src="script.js"></script>
+</body>
+</html>
