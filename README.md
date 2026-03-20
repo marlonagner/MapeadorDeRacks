@@ -15,3 +15,6 @@ IDEIA VISUAL DO ESQUEMA:
 
 
 ![RacksVisual](https://github.com/user-attachments/assets/52c9e90f-c4bd-4986-8906-10fdd288caf3)
+
+Quando clicar vai ocorrer igual a foto abaixo, apontando a porta do switch em qual porta do patch panel está e qual a Vlan de saída:
+<img width="1317" height="575" alt="exemplo" src="https://github.com/user-attachments/assets/a9a346d3-7da7-4e87-b984-fd725e0904e2" />
