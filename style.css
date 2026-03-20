@@ -1,0 +1,82 @@
+body {
+  margin: 0;
+  background: #0d1117;
+  color: #fff;
+  font-family: Arial;
+}
+
+.rack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 50px;
+  margin-top: 30px;
+}
+
+/* SWITCHES LADO A LADO */
+.row {
+  display: flex;
+  gap: 20px;
+}
+
+/* PATCH EM COLUNA */
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.device {
+  background: #161b22;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #30363d;
+}
+
+.title {
+  text-align: center;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+/* GRID DAS PORTAS */
+.ports {
+  display: grid;
+  grid-template-columns: repeat(13, 28px);
+  gap: 4px;
+}
+
+.port {
+  width: 28px;
+  height: 28px;
+  background: #2d333b;
+  text-align: center;
+  line-height: 28px;
+  font-size: 11px;
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.port:hover {
+  background: #444c56;
+}
+
+.port.active {
+  background: #00ffcc;
+}
+
+#info {
+  text-align: center;
+  margin: 20px;
+  font-size: 18px;
+  color: #00ffcc;
+}
+
+svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4000px;
+  pointer-events: none;
+}
