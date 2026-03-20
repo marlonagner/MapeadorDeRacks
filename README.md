@@ -11,4 +11,7 @@ na lista da váriavel abaixo seguindo o mesmo formato da foto modelo abaixo:
 <img width="658" height="249" alt="Pra add mapeamentos faça igual o codigo da foto, vai no scrip,js e edita ele" src="https://github.com/user-attachments/assets/8da93ff2-10c8-4c6a-83ad-98df3b10d2ed" />
 
 
-IDEIA VISUAL DO ESQUEMA
+IDEIA VISUAL DO ESQUEMA:
+
+
+![RacksVisual](https://github.com/user-attachments/assets/52c9e90f-c4bd-4986-8906-10fdd288caf3)
