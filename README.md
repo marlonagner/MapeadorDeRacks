@@ -1,5 +1,5 @@
 # MapeadorDeRacks
-Para mapear Racks De Redes - Swtichs x Patch Panels
+Para mapear Racks De Redes - Switchs x Patch Panels
 
 A Empresa precisa de um mapeador onde cada saída do Switch vai para uma entrada no Patch Panel
 E cada Saída desse Switch está com uma VLAN Tagged ou Várias VLans General / Trunk
