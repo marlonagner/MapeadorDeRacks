@@ -17,6 +17,26 @@ h1, h2 {
   margin-bottom: 20px;
 }
 
+#form-container {
+  margin: 20px auto;
+  padding: 15px;
+  background-color: #1e1e1e;
+  border: 2px solid #00ffcc;
+  border-radius: 6px;
+  width: fit-content;
+}
+
+#form-container label {
+  display: inline-block;
+  width: 150px;
+}
+
+#form-container input, 
+#form-container select {
+  width: 100px;
+  margin-bottom: 10px;
+}
+
 .device {
   display: inline-block;
   vertical-align: top;

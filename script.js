@@ -1,12 +1,15 @@
+// ========================
+// ELEMENTOS PRINCIPAIS
+// ========================
 const switchesDiv = document.getElementById("switches");
 const patchesDiv = document.getElementById("patches");
+const svg = document.getElementById("svgLines");
+const info = document.getElementById("info");
 
 // ========================
 // CRIAR SWITCHES (4x 26 portas)
 // ========================
-
 for (let s = 1; s <= 4; s++) {
-
   const box = document.createElement("div");
   box.className = "device";
 
@@ -21,7 +24,7 @@ for (let s = 1; s <= 4; s++) {
     const p = document.createElement("div");
     p.className = "port";
     p.innerText = i;
-    p.id = `switch${s}-Porta${i}`; // IDs legíveis sem espaços
+    p.id = `switch${s}-Porta${i}`;
     portsDiv.appendChild(p);
   }
 
@@ -33,9 +36,7 @@ for (let s = 1; s <= 4; s++) {
 // ========================
 // CRIAR PATCH PANELS (3x 48 portas)
 // ========================
-
 for (let p = 1; p <= 3; p++) {
-
   const box = document.createElement("div");
   box.className = "device";
 
@@ -50,7 +51,7 @@ for (let p = 1; p <= 3; p++) {
     const el = document.createElement("div");
     el.className = "port";
     el.innerText = i;
-    el.id = `PatchPanel${p}-Porta${i}`; // IDs legíveis sem espaços
+    el.id = `PatchPanel${p}-Porta${i}`;
     portsDiv.appendChild(el);
   }
 
@@ -60,25 +61,18 @@ for (let p = 1; p <= 3; p++) {
 }
 
 // ========================
-// MAPEAMENTO
+// MAPEAMENTO INICIAL
 // ========================
 const mapping = {
   "switch1-Porta3": { target: "PatchPanel1-Porta37", vlan: 20 },
   "switch3-Porta5": { target: "PatchPanel3-Porta44", vlan: 20 },
   "switch3-Porta20": { target: "PatchPanel3-Porta43", vlan: 20 },
-  "switch3-Porta19": { target: "PatchPanel2-Porta36", vlan: 20 } // corrigi para porta existente
+  "switch3-Porta19": { target: "PatchPanel2-Porta36", vlan: 20 }
 };
 
 // ========================
-// LÓGICA
+// FUNÇÃO PARA DESENHAR LINHA
 // ========================
-
-const svg = document.getElementById("svgLines");
-const info = document.getElementById("info");
-
-let linha = null;
-let ativo = null;
-
 function desenharLinha(a, b) {
   const r1 = a.getBoundingClientRect();
   const r2 = b.getBoundingClientRect();
@@ -90,7 +84,6 @@ function desenharLinha(a, b) {
   const y2 = r2.top + r2.height / 2 + window.scrollY;
 
   const l = document.createElementNS("http://www.w3.org/2000/svg", "line");
-
   l.setAttribute("x1", x1);
   l.setAttribute("y1", y1);
   l.setAttribute("x2", x2);
@@ -102,41 +95,76 @@ function desenharLinha(a, b) {
   return l;
 }
 
-document.addEventListener("click", function(e) {
+// ========================
+// CLICK NAS PORTAS (LINHAS)
+// ========================
+let ativo = null;
+const linhasAtivas = {}; // guarda linhas ativas por porta
 
+document.addEventListener("click", function(e){
   if (!e.target.classList.contains("port")) return;
 
   const id = e.target.id;
 
+  // se clicar na mesma porta ativa, remove linha
   if (ativo === id) {
-    if (linha) linha.remove();
-    linha = null;
+    if (linhasAtivas[id]) {
+      linhasAtivas[id].remove();
+      delete linhasAtivas[id];
+    }
     ativo = null;
     info.innerText = "Clique em uma porta";
     document.querySelectorAll(".port").forEach(x => x.classList.remove("active"));
     return;
   }
 
-  if (linha) linha.remove();
+  // limpa todas as linhas existentes antes
+  Object.keys(linhasAtivas).forEach(k => {
+    linhasAtivas[k].remove();
+    delete linhasAtivas[k];
+  });
+
   document.querySelectorAll(".port").forEach(x => x.classList.remove("active"));
 
   const map = mapping[id];
-
   if (!map) {
     info.innerText = "Sem mapeamento";
     return;
   }
 
   const destino = document.getElementById(map.target);
+  const l = desenharLinha(e.target, destino);
+  linhasAtivas[id] = l;
 
-  linha = desenharLinha(e.target, destino);
   ativo = id;
-
   e.target.classList.add("active");
   destino.classList.add("active");
 
   info.innerText = `${id} → ${map.target} | VLAN ${map.vlan}`;
-
   destino.scrollIntoView({ behavior: "smooth", block: "center" });
+});
 
+// ========================
+// FORMULÁRIO DINÂMICO
+// ========================
+const mappingForm = document.getElementById("mappingForm");
+
+mappingForm.addEventListener("submit", function(e){
+  e.preventDefault();
+
+  const formData = new FormData(mappingForm);
+  const sw = formData.get("switch");
+  const swPort = formData.get("switchPort");
+  const pp = formData.get("patchPanel");
+  const ppPort = formData.get("patchPort");
+  const vlan = formData.get("vlan");
+
+  const key = `${sw}-Porta${swPort}`;
+  const value = { target: `${pp}-Porta${ppPort}`, vlan: parseInt(vlan) };
+
+  // Adiciona ao mapping
+  mapping[key] = value;
+
+  // resetar formulário
+  mappingForm.reset();
 });
