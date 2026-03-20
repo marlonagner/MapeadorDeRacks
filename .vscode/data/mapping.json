@@ -1,1 +1,4 @@
-{}
+{
+  "switch1-Porta3": { "target": "PatchPanel1-Porta37", "vlan": 20 },
+  "switch2-Porta5": { "target": "PatchPanel2-Porta12", "vlan": 30 }
+}
