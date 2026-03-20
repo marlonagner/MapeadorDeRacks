@@ -21,7 +21,7 @@ for (let s = 1; s <= 4; s++) {
     const p = document.createElement("div");
     p.className = "port";
     p.innerText = i;
-    p.id = `sw${s}-${i}`;
+    p.id = `switch${s}-Porta${i}`; // IDs legíveis sem espaços
     portsDiv.appendChild(p);
   }
 
@@ -50,7 +50,7 @@ for (let p = 1; p <= 3; p++) {
     const el = document.createElement("div");
     el.className = "port";
     el.innerText = i;
-    el.id = `pp${p}-${i}`;
+    el.id = `PatchPanel${p}-Porta${i}`; // IDs legíveis sem espaços
     portsDiv.appendChild(el);
   }
 
@@ -62,16 +62,11 @@ for (let p = 1; p <= 3; p++) {
 // ========================
 // MAPEAMENTO
 // ========================
-//Aqui é onde a gente coloca qual switch e porta, qual patch panel e porta, e qual VLAN.
-//é só ir acrescentando mais linhas nesse formato abaixo:
 const mapping = {
-  "sw1-3": { target: "pp1-37", vlan: 20 },
- 
-   "sw3-5": { target: "pp3-44", vlan: 20 },
-
-   "sw3-20": { target: "pp3-43", vlan: 20 },
-
-   "sw3-19": { target: "pp2-86", vlan: 20 }
+  "switch1-Porta3": { target: "PatchPanel1-Porta37", vlan: 20 },
+  "switch3-Porta5": { target: "PatchPanel3-Porta44", vlan: 20 },
+  "switch3-Porta20": { target: "PatchPanel3-Porta43", vlan: 20 },
+  "switch3-Porta19": { target: "PatchPanel2-Porta36", vlan: 20 } // corrigi para porta existente
 };
 
 // ========================

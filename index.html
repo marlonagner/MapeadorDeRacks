@@ -1,24 +1,29 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Rack Interativo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mapa de Switches e Patch Panels</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<svg id="svgLines"></svg>
+  <h1>Mapa de Switches e Patch Panels</h1>
 
-<div class="rack">
+  <div id="switches-container">
+    <h2>Switches</h2>
+    <div id="switches"></div>
+  </div>
 
-  <div id="switches" class="row"></div>
+  <div id="patches-container">
+    <h2>Patch Panels</h2>
+    <div id="patches"></div>
+  </div>
 
-  <div id="patches" class="column"></div>
+  <p id="info">Clique em uma porta</p>
 
-</div>
+  <svg id="svgLines"></svg>
 
-<div id="info">Clique em uma porta</div>
-
-<script src="script.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
