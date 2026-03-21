@@ -10,54 +10,51 @@
 
   <h1>Mapa de Switches e Patch Panels</h1>
 
-  <div id="switches-container">
-    <h2>Switches</h2>
-    <div id="switches"></div>
-  </div>
+  <div id="rack-container">
+    <!-- Canvas atrás das portas -->
+    <canvas id="canvasLines"></canvas>
 
-  <div id="patches-container">
-    <h2>Patch Panels</h2>
-    <div id="patches"></div>
+    <div id="switches-container">
+      <h2>Switches</h2>
+      <div id="switches"></div>
+    </div>
+
+    <div id="patches-container">
+      <h2>Patch Panels</h2>
+      <div id="patches"></div>
+    </div>
   </div>
 
   <p id="info">Clique em uma porta</p>
 
-  <!-- FORMULÁRIO PARA ADICIONAR/ATUALIZAR MAPEAMENTO -->
+  <!-- Formulário -->
   <div id="form-container">
     <h2>Adicionar/Atualizar Mapeamento</h2>
     <form id="mappingForm">
-      <label for="switch">Switch:</label>
-      <select name="switch" id="switch" required>
-        <option value="switch1">Switch 1</option>
-        <option value="switch2">Switch 2</option>
-        <option value="switch3">Switch 3</option>
-        <option value="switch4">Switch 4</option>
-      </select>
+      <label for="switchSelect">Switch:</label>
+      <select id="switchSelect" required></select>
 
       <label for="switchPort">Porta do Switch:</label>
-      <input type="number" name="switchPort" id="switchPort" min="1" max="26" required>
+      <select id="switchPort" required></select>
 
-      <label for="patchPanel">Patch Panel:</label>
-      <select name="patchPanel" id="patchPanel" required>
-        <option value="PatchPanel1">Patch Panel 1</option>
-        <option value="PatchPanel2">Patch Panel 2</option>
-        <option value="PatchPanel3">Patch Panel 3</option>
-      </select>
+      <label for="patchSelect">Patch Panel:</label>
+      <select id="patchSelect" required></select>
 
       <label for="patchPort">Porta do Patch Panel:</label>
-      <input type="number" name="patchPort" id="patchPort" min="1" max="48" required>
+      <select id="patchPort" required></select>
 
       <label for="vlan">VLAN:</label>
-      <input type="number" name="vlan" id="vlan" min="1" max="4094" required>
+      <input type="number" id="vlan" required min="1">
 
-      <button type="submit">Adicionar/Atualizar</button>
+      <button type="submit">Salvar Mapeamento</button>
     </form>
 
+    <h3>Import / Export JSON</h3>
     <button id="exportBtn">Exportar JSON</button>
     <input type="file" id="importFile" accept=".json">
-  </div>
 
-  <svg id="svgLines"></svg>
+    <button id="manualBackupBtn">Backup Manual</button>
+  </div>
 
   <script src="script.js"></script>
 </body>

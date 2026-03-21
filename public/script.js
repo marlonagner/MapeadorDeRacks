@@ -1,24 +1,33 @@
 const switchesDiv = document.getElementById("switches");
 const patchesDiv = document.getElementById("patches");
-const svg = document.getElementById("svgLines");
+const canvas = document.getElementById("canvasLines");
+const ctx = canvas.getContext("2d");
 const info = document.getElementById("info");
-let linha = null;
-let ativo = null;
+
+// Ajusta o canvas para o tamanho do container
+function resizeCanvas() {
+  canvas.width = document.getElementById("rack-container").offsetWidth;
+  canvas.height = document.getElementById("rack-container").offsetHeight;
+}
+window.addEventListener("resize", resizeCanvas);
+resizeCanvas();
 
 // ========================
-// CARREGAR MAPEAMENTOS DO LOCALSTORAGE
+// LocalStorage
 // ========================
 let mapping = JSON.parse(localStorage.getItem("mapping") || "{}");
 
 // ========================
-// CRIAR SWITCHES (4x26 portas)
+// Criar Switches
 // ========================
 for (let s = 1; s <= 4; s++) {
   const box = document.createElement("div");
   box.className = "device";
+
   const title = document.createElement("div");
   title.className = "title";
   title.innerText = "Switch " + s;
+
   const portsDiv = document.createElement("div");
   portsDiv.className = "ports";
 
@@ -36,14 +45,16 @@ for (let s = 1; s <= 4; s++) {
 }
 
 // ========================
-// CRIAR PATCH PANELS (3x48 portas)
+// Criar Patch Panels
 // ========================
 for (let p = 1; p <= 3; p++) {
   const box = document.createElement("div");
   box.className = "device";
+
   const title = document.createElement("div");
   title.className = "title";
   title.innerText = "Patch Panel " + p;
+
   const portsDiv = document.createElement("div");
   portsDiv.className = "ports";
 
@@ -61,70 +72,87 @@ for (let p = 1; p <= 3; p++) {
 }
 
 // ========================
-// DESENHAR LINHA
+// Função para desenhar linha no canvas
 // ========================
-function desenharLinha(a, b) {
-  const r1 = a.getBoundingClientRect();
-  const r2 = b.getBoundingClientRect();
+function drawLine(a, b) {
+  const rectA = a.getBoundingClientRect();
+  const rectB = b.getBoundingClientRect();
+  const containerRect = document.getElementById("rack-container").getBoundingClientRect();
 
-  const x1 = r1.left + r1.width / 2 + window.scrollX;
-  const y1 = r1.top + r1.height / 2 + window.scrollY;
+  // Coordenadas relativas ao container
+  const x1 = rectA.left + rectA.width/2 - containerRect.left;
+  const y1 = rectA.top + rectA.height/2 - containerRect.top;
+  const x2 = rectB.left + rectB.width/2 - containerRect.left;
+  const y2 = rectB.top + rectB.height/2 - containerRect.top;
 
-  const x2 = r2.left + r2.width / 2 + window.scrollX;
-  const y2 = r2.top + r2.height / 2 + window.scrollY;
-
-  const l = document.createElementNS("http://www.w3.org/2000/svg", "line");
-  l.setAttribute("x1", x1);
-  l.setAttribute("y1", y1);
-  l.setAttribute("x2", x2);
-  l.setAttribute("y2", y2);
-  l.setAttribute("stroke", "#00ffcc");
-  l.setAttribute("stroke-width", "3");
-
-  svg.appendChild(l);
-  return l;
+  ctx.strokeStyle = "#00ffcc";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x2, y2);
+  ctx.stroke();
 }
 
 // ========================
-// CLICK NAS PORTAS
+// Desenhar todas linhas do mapping
+// ========================
+function redrawAllLines() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  for (let key in mapping) {
+    const sourceEl = document.getElementById(key);
+    const targetEl = document.getElementById(mapping[key].target);
+    if (sourceEl && targetEl) drawLine(sourceEl, targetEl);
+  }
+}
+
+// ========================
+// Clique nas portas
 // ========================
 document.addEventListener("click", function(e) {
   if (!e.target.classList.contains("port")) return;
-  const id = e.target.id;
 
-  if (ativo === id) {
-    if (linha) linha.remove();
-    linha = null;
-    ativo = null;
-    info.innerText = "Clique em uma porta";
-    document.querySelectorAll(".port").forEach(x => x.classList.remove("active"));
-    return;
+  document.querySelectorAll(".port").forEach(x => x.classList.remove("active"));
+  e.target.classList.add("active");
+
+  // Limpa canvas temporário e redesenha todas linhas
+  redrawAllLines();
+
+  const id = e.target.id;
+  let sourceId = id;
+  let targetId = null;
+  let vlan = null;
+
+  if (mapping[id]) { // porta é source
+    targetId = mapping[id].target;
+    vlan = mapping[id].vlan;
+  } else { 
+    // porta é target
+    const entry = Object.entries(mapping).find(([k,v]) => v.target === id);
+    if (entry) {
+      sourceId = entry[0];
+      targetId = id;
+      vlan = entry[1].vlan;
+    }
   }
 
-  if (linha) linha.remove();
-  document.querySelectorAll(".port").forEach(x => x.classList.remove("active"));
-
-  const map = mapping[id] || Object.entries(mapping).find(([k,v]) => v.target === id)?.[1];
-
-  if (!map) {
+  if (!targetId) {
     info.innerText = "Sem mapeamento";
     return;
   }
 
-  const destino = document.getElementById(map.target);
-  if (!destino) return;
+  const sourceEl = document.getElementById(sourceId);
+  const targetEl = document.getElementById(targetId);
+  if (!sourceEl || !targetEl) return;
 
-  linha = desenharLinha(e.target, destino);
-  ativo = id;
-
-  e.target.classList.add("active");
-  destino.classList.add("active");
-  info.innerText = `${id} → ${map.target} | VLAN ${map.vlan}`;
-  destino.scrollIntoView({ behavior: "smooth", block: "center" });
+  drawLine(sourceEl, targetEl);
+  sourceEl.classList.add("active");
+  targetEl.classList.add("active");
+  info.innerText = `${sourceId} → ${targetId} | VLAN ${vlan}`;
+  targetEl.scrollIntoView({ behavior: "smooth", block: "center" });
 });
 
 // ========================
-// FORMULÁRIO ADICIONAR/ATUALIZAR
+// Formulário salvar mapping
 // ========================
 document.getElementById("mappingForm").addEventListener("submit", function(e){
   e.preventDefault();
@@ -136,15 +164,14 @@ document.getElementById("mappingForm").addEventListener("submit", function(e){
 
   const key = `${s}-Porta${sp}`;
   const target = `${p}-Porta${pp}`;
-
   mapping[key] = { target, vlan: parseInt(vlan) };
   localStorage.setItem("mapping", JSON.stringify(mapping));
-
+  redrawAllLines();
   alert("Mapeamento salvo!");
 });
 
 // ========================
-// EXPORTAR JSON
+// Export JSON
 // ========================
 document.getElementById("exportBtn").addEventListener("click", function(){
   const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(mapping, null, 2));
@@ -155,7 +182,7 @@ document.getElementById("exportBtn").addEventListener("click", function(){
 });
 
 // ========================
-// IMPORTAR JSON
+// Import JSON
 // ========================
 document.getElementById("importFile").addEventListener("change", function(e){
   const file = e.target.files[0];
@@ -165,43 +192,23 @@ document.getElementById("importFile").addEventListener("change", function(e){
     mapping = JSON.parse(evt.target.result);
     localStorage.setItem("mapping", JSON.stringify(mapping));
     alert("JSON importado com sucesso!");
-    window.location.reload(); // recarrega para desenhar linhas
+    redrawAllLines();
   }
   reader.readAsText(file);
 });
 
 // ========================
-// BACKUP AUTOMÁTICO AO FECHAR PÁGINA
+// Backup manual
 // ========================
-function backupAutomatico() {
+document.getElementById("manualBackupBtn").addEventListener("click", function(){
   const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(mapping, null, 2));
   const dlAnchor = document.createElement('a');
   dlAnchor.setAttribute("href", dataStr);
   dlAnchor.setAttribute("download", `mapping-backup-${new Date().toISOString().slice(0,10)}.json`);
   dlAnchor.click();
-}
-
-// Backup ao fechar/atualizar a página
-window.addEventListener("beforeunload", function(){
-  backupAutomatico();
 });
 
-// Backup manual extra
-const manualBackupBtn = document.createElement("button");
-manualBackupBtn.innerText = "Backup Manual";
-manualBackupBtn.style.marginTop = "10px";
-manualBackupBtn.onclick = backupAutomatico;
-document.getElementById("form-container").appendChild(manualBackupBtn);
-
 // ========================
-// CARREGAR LINHAS EXISTENTES AO INICIAR
+// Inicializar
 // ========================
-window.addEventListener("load", function(){
-  for (let key in mapping) {
-    const sourceEl = document.getElementById(key);
-    const targetEl = document.getElementById(mapping[key].target);
-    if (sourceEl && targetEl) {
-      desenharLinha(sourceEl, targetEl);
-    }
-  }
-});
+window.addEventListener("load", redrawAllLines);
