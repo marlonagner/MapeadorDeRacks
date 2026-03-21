@@ -10,22 +10,19 @@
 
   <h1>Mapa de Switches e Patch Panels</h1>
 
-  <!-- CONTÊINER DOS SWITCHES -->
   <div id="switches-container">
     <h2>Switches</h2>
     <div id="switches"></div>
   </div>
 
-  <!-- CONTÊINER DOS PATCH PANELS -->
   <div id="patches-container">
     <h2>Patch Panels</h2>
     <div id="patches"></div>
   </div>
 
-  <!-- INFORMAÇÕES -->
   <p id="info">Clique em uma porta</p>
 
-  <!-- FORMULÁRIO PARA ADICIONAR MAPEAMENTO -->
+  <!-- FORMULÁRIO PARA ADICIONAR/ATUALIZAR MAPEAMENTO -->
   <div id="form-container">
     <h2>Adicionar/Atualizar Mapeamento</h2>
     <form id="mappingForm">
@@ -55,9 +52,11 @@
 
       <button type="submit">Adicionar/Atualizar</button>
     </form>
+
+    <button id="exportBtn">Exportar JSON</button>
+    <input type="file" id="importFile" accept=".json">
   </div>
 
-  <!-- SVG para desenhar linhas -->
   <svg id="svgLines"></svg>
 
   <script src="script.js"></script>

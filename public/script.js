@@ -2,53 +2,23 @@ const switchesDiv = document.getElementById("switches");
 const patchesDiv = document.getElementById("patches");
 const svg = document.getElementById("svgLines");
 const info = document.getElementById("info");
-
-const mapping = {}; // objeto de mapeamentos
+let linha = null;
 let ativo = null;
-const linhasAtivas = {};
 
 // ========================
-// CARREGAR MAPEAMENTOS DO BACKEND
+// CARREGAR MAPEAMENTOS DO LOCALSTORAGE
 // ========================
-async function loadMapping() {
-  try {
-    const res = await fetch("/mapping");
-    const data = await res.json();
-    Object.assign(mapping, data);
-  } catch (err) {
-    console.error("Erro ao carregar mapping:", err);
-  }
-}
+let mapping = JSON.parse(localStorage.getItem("mapping") || "{}");
 
 // ========================
-// FUNÇÃO PARA SALVAR MAPEAMENTO NO BACKEND
-// ========================
-async function saveMapping(key, value) {
-  const payload = {};
-  payload[key] = value;
-  try {
-    await fetch("/mapping", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-    mapping[key] = value; // atualiza local também
-  } catch (err) {
-    console.error("Erro ao salvar mapping:", err);
-  }
-}
-
-// ========================
-// CRIAR SWITCHES (4x 26 portas)
+// CRIAR SWITCHES (4x26 portas)
 // ========================
 for (let s = 1; s <= 4; s++) {
   const box = document.createElement("div");
   box.className = "device";
-
   const title = document.createElement("div");
   title.className = "title";
   title.innerText = "Switch " + s;
-
   const portsDiv = document.createElement("div");
   portsDiv.className = "ports";
 
@@ -66,16 +36,14 @@ for (let s = 1; s <= 4; s++) {
 }
 
 // ========================
-// CRIAR PATCH PANELS (3x 48 portas)
+// CRIAR PATCH PANELS (3x48 portas)
 // ========================
 for (let p = 1; p <= 3; p++) {
   const box = document.createElement("div");
   box.className = "device";
-
   const title = document.createElement("div");
   title.className = "title";
   title.innerText = "Patch Panel " + p;
-
   const portsDiv = document.createElement("div");
   portsDiv.className = "ports";
 
@@ -93,7 +61,7 @@ for (let p = 1; p <= 3; p++) {
 }
 
 // ========================
-// FUNÇÃO PARA DESENHAR LINHA
+// DESENHAR LINHA
 // ========================
 function desenharLinha(a, b) {
   const r1 = a.getBoundingClientRect();
@@ -118,94 +86,122 @@ function desenharLinha(a, b) {
 }
 
 // ========================
-// MAPPEAMENTO REVERSO (PATCH PANEL → SWITCH)
+// CLICK NAS PORTAS
 // ========================
-function getReverseMapping(portId) {
-  for (const swPort in mapping) {
-    if (mapping[swPort].target === portId) {
-      return { origem: swPort, vlan: mapping[swPort].vlan };
-    }
-  }
-  return null;
-}
-
-// ========================
-// CLICK NAS PORTAS (SWITCH OU PATCH PANEL)
-// ========================
-document.addEventListener("click", function(e){
+document.addEventListener("click", function(e) {
   if (!e.target.classList.contains("port")) return;
-
   const id = e.target.id;
-  let origemId, destinoId, vlan;
 
-  if (mapping[id]) {
-    origemId = id;
-    destinoId = mapping[id].target;
-    vlan = mapping[id].vlan;
-  } else {
-    const rev = getReverseMapping(id);
-    if (!rev) {
-      info.innerText = "Sem mapeamento";
-      return;
-    }
-    origemId = rev.origem;
-    destinoId = id;
-    vlan = rev.vlan;
-  }
-
-  if (ativo === origemId) {
-    if (linhasAtivas[origemId]) {
-      linhasAtivas[origemId].remove();
-      delete linhasAtivas[origemId];
-    }
+  if (ativo === id) {
+    if (linha) linha.remove();
+    linha = null;
     ativo = null;
     info.innerText = "Clique em uma porta";
     document.querySelectorAll(".port").forEach(x => x.classList.remove("active"));
     return;
   }
 
-  Object.keys(linhasAtivas).forEach(k => {
-    linhasAtivas[k].remove();
-    delete linhasAtivas[k];
-  });
+  if (linha) linha.remove();
   document.querySelectorAll(".port").forEach(x => x.classList.remove("active"));
 
-  const origemEl = document.getElementById(origemId);
-  const destinoEl = document.getElementById(destinoId);
-  const l = desenharLinha(origemEl, destinoEl);
-  linhasAtivas[origemId] = l;
+  const map = mapping[id] || Object.entries(mapping).find(([k,v]) => v.target === id)?.[1];
 
-  ativo = origemId;
-  origemEl.classList.add("active");
-  destinoEl.classList.add("active");
+  if (!map) {
+    info.innerText = "Sem mapeamento";
+    return;
+  }
 
-  info.innerText = `${origemId} → ${destinoId} | VLAN ${vlan}`;
-  destinoEl.scrollIntoView({ behavior: "smooth", block: "center" });
+  const destino = document.getElementById(map.target);
+  if (!destino) return;
+
+  linha = desenharLinha(e.target, destino);
+  ativo = id;
+
+  e.target.classList.add("active");
+  destino.classList.add("active");
+  info.innerText = `${id} → ${map.target} | VLAN ${map.vlan}`;
+  destino.scrollIntoView({ behavior: "smooth", block: "center" });
 });
 
 // ========================
-// FORMULÁRIO DINÂMICO
+// FORMULÁRIO ADICIONAR/ATUALIZAR
 // ========================
-const mappingForm = document.getElementById("mappingForm");
-
-mappingForm.addEventListener("submit", async function(e){
+document.getElementById("mappingForm").addEventListener("submit", function(e){
   e.preventDefault();
+  const s = document.getElementById("switch").value;
+  const sp = document.getElementById("switchPort").value;
+  const p = document.getElementById("patchPanel").value;
+  const pp = document.getElementById("patchPort").value;
+  const vlan = document.getElementById("vlan").value;
 
-  const formData = new FormData(mappingForm);
-  const sw = formData.get("switch");
-  const swPort = formData.get("switchPort");
-  const pp = formData.get("patchPanel");
-  const ppPort = formData.get("patchPort");
-  const vlan = formData.get("vlan");
+  const key = `${s}-Porta${sp}`;
+  const target = `${p}-Porta${pp}`;
 
-  const key = `${sw}-Porta${swPort}`;
-  const value = { target: `${pp}-Porta${ppPort}`, vlan: parseInt(vlan) };
+  mapping[key] = { target, vlan: parseInt(vlan) };
+  localStorage.setItem("mapping", JSON.stringify(mapping));
 
-  await saveMapping(key, value);
-  mappingForm.reset();
+  alert("Mapeamento salvo!");
 });
 
 // ========================
-// INICIALIZAÇÃO
+// EXPORTAR JSON
 // ========================
-loadMapping();
+document.getElementById("exportBtn").addEventListener("click", function(){
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(mapping, null, 2));
+  const dlAnchor = document.createElement('a');
+  dlAnchor.setAttribute("href", dataStr);
+  dlAnchor.setAttribute("download", "mapping.json");
+  dlAnchor.click();
+});
+
+// ========================
+// IMPORTAR JSON
+// ========================
+document.getElementById("importFile").addEventListener("change", function(e){
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt){
+    mapping = JSON.parse(evt.target.result);
+    localStorage.setItem("mapping", JSON.stringify(mapping));
+    alert("JSON importado com sucesso!");
+    window.location.reload(); // recarrega para desenhar linhas
+  }
+  reader.readAsText(file);
+});
+
+// ========================
+// BACKUP AUTOMÁTICO AO FECHAR PÁGINA
+// ========================
+function backupAutomatico() {
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(mapping, null, 2));
+  const dlAnchor = document.createElement('a');
+  dlAnchor.setAttribute("href", dataStr);
+  dlAnchor.setAttribute("download", `mapping-backup-${new Date().toISOString().slice(0,10)}.json`);
+  dlAnchor.click();
+}
+
+// Backup ao fechar/atualizar a página
+window.addEventListener("beforeunload", function(){
+  backupAutomatico();
+});
+
+// Backup manual extra
+const manualBackupBtn = document.createElement("button");
+manualBackupBtn.innerText = "Backup Manual";
+manualBackupBtn.style.marginTop = "10px";
+manualBackupBtn.onclick = backupAutomatico;
+document.getElementById("form-container").appendChild(manualBackupBtn);
+
+// ========================
+// CARREGAR LINHAS EXISTENTES AO INICIAR
+// ========================
+window.addEventListener("load", function(){
+  for (let key in mapping) {
+    const sourceEl = document.getElementById(key);
+    const targetEl = document.getElementById(mapping[key].target);
+    if (sourceEl && targetEl) {
+      desenharLinha(sourceEl, targetEl);
+    }
+  }
+});
